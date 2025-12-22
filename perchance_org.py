@@ -115,6 +115,7 @@ class Perchance:
         if _data["status"] == "already_verified" or _data["status"] == "success":
             self.userKey = _data["userKey"]
         else:
+            # if this fails go to https://perchance.org/ai-chat and generate 1 message, this skips cloudflare solving, only needed once (per ip probably)
             raise Exception("[Perchance.org] Failed to verify. Verify once in browser or someshit, rerun ig. Response:", _data)
         
         # infinite loop possible here but idgaf
