@@ -234,6 +234,7 @@ class Z_AI:
         self._emulate_page_load()
 
         # Needed bullshit
+        self.x_fe_version: str = None
         self.chat_id: str = None
         self.page_title: str
         self.id: str
@@ -247,6 +248,9 @@ class Z_AI:
         _resp = self.session.get("https://chat.z.ai/")
         _page_title_match = re.search(r'<link[^>]*\btitle="([^"]+)"', _resp.text, re.IGNORECASE)
         self.page_title = _page_title_match.group(1)
+        
+        _x_fe_version_match = re.search(r"/frontend/(prod-fe-\d+(?:\.\d+){2})/_app/", _resp.text)
+        self.x_fe_version = _x_fe_version_match.group(1)
 
         # Temp headers
         _temp_headers = {
@@ -364,14 +368,14 @@ class Z_AI:
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
-            "x-fe-version": "prod-fe-1.0.184", # im gonna make it auto update later
+            "x-fe-version": self.x_fe_version,
             "x-signature": _signature
         }
         _temp_headers = {**self.session.headers, **_temp_headers}
 
         # returns: data: {"data":{"content":"","done":true,"error":{"code":"INTERNAL_ERROR","detail":"Oops, something went wrong. Please refresh the page or try again later."}},"type":"chat:completion"}
         # for some fucking reason, doesnt seem to effect the actual response tho
-        _resp = self.session.post(f"https://chat.z.ai/api/v2/chat/completions?{_query.string()}", headers=_temp_headers, json=_payload)
+        _resp = self.session.post(f"https://chat.z.ai/api/v2/chat/completions?{_query.string()}", headers=_temp_headers, json=_payload, timeout=120)
         out = []
         got_delta = False
 
