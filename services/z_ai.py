@@ -251,7 +251,6 @@ class Z_AI:
         
         _x_fe_version_match = re.search(r"prod-fe-\d+(?:\.\d+)+", _resp.text)
         self.x_fe_version = _x_fe_version_match.group(0)
-        print("self.x_fe_version", self.x_fe_version)
 
         # Temp headers
         _temp_headers = {
