@@ -234,7 +234,7 @@ class Z_AI:
         self._emulate_page_load()
 
         # Needed bullshit
-        self.x_fe_version: str = None
+        self.x_fe_version: str
         self.chat_id: str = None
         self.page_title: str
         self.id: str
@@ -249,8 +249,9 @@ class Z_AI:
         _page_title_match = re.search(r'<link[^>]*\btitle="([^"]+)"', _resp.text, re.IGNORECASE)
         self.page_title = _page_title_match.group(1)
         
-        _x_fe_version_match = re.search(r"/frontend/(prod-fe-\d+(?:\.\d+){2})/_app/", _resp.text)
-        self.x_fe_version = _x_fe_version_match.group(1)
+        _x_fe_version_match = re.search(r"prod-fe-\d+(?:\.\d+)+", _resp.text)
+        self.x_fe_version = _x_fe_version_match.group(0)
+        print("self.x_fe_version", self.x_fe_version)
 
         # Temp headers
         _temp_headers = {
