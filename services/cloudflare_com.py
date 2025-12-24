@@ -50,6 +50,31 @@ class Cloudflare:
         
     class _Messages:
         @staticmethod
+        def _is_continuation(old, new, max_new=2):
+            if not old:
+                return True
+
+            def normalize(msgs):
+                return [
+                    (m["role"], m["content"])
+                    for m in msgs
+                ]
+
+            old_n = normalize(old)
+            new_n = normalize(new)
+
+            if len(new_n) < len(old_n):
+                return False
+
+            if new_n[:len(old_n)] != old_n:
+                return False
+
+            if len(new_n) - len(old_n) > max_new:
+                return False
+
+            return True
+        
+        @staticmethod
         def _convert_messages(messages: list) -> list:
             _cf_msgs = []
             for m in messages:
@@ -67,38 +92,41 @@ class Cloudflare:
             return _cf_msgs
         
     class Models:
-        GPT_OSS_120B = "@cf/openai/gpt-oss-120b"
-        QWEN_1_5_0_5B_CHAT = "@cf/qwen/qwen1.5-0.5b-chat"
-        GEMMA_2B_IT_LORA = "@cf/google/gemma-2b-it-lora"
-        LLAMA3_8B_INSTRUCT = "@cf/meta/llama-3-8b-instruct"
-        LLAMA3_2_3B_INSTRUCT = "@cf/meta/llama-3.2-3b-instruct"
-        LLAMAGUARD_7B_AWQ = "@hf/thebloke/llamaguard-7b-awq"
-        LLAMA_GUARD_3_8B = "@cf/meta/llama-guard-3-8b"
-        LLAMA2_7B_FP16 = "@cf/meta/llama-2-7b-chat-fp16"
-        MISTRAL_7B_V0_1 = "@cf/mistral/mistral-7b-instruct-v0.1"
-        MISTRAL_7B_V0_2_LORA = "@cf/mistral/mistral-7b-instruct-v0.2-lora"
-        DEEPSEEK_R1_32B = "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
-        LLAMA2_7B_INT8 = "@cf/meta/llama-2-7b-chat-int8"
-        LLAMA3_1_8B_FP8 = "@cf/meta/llama-3.1-8b-instruct-fp8"
-        QWEN1_5_7B_AWQ = "@cf/qwen/qwen1.5-7b-chat-awq"
-        LLAMA3_2_1B = "@cf/meta/llama-3.2-1b-instruct"
-        LLAMA3_3_70B_FP8 = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
-        GRANITE_4_MICRO = "@cf/ibm-granite/granite-4.0-h-micro"
-        QWEN2_5_CODER_32B = "@cf/qwen/qwen2.5-coder-32b-instruct"
+        # DeepSeek
         DEEPSEEK_MATH_7B = "@cf/deepseek-ai/deepseek-math-7b-instruct"
-        GEMMA_SEA_LION_27B = "@cf/aisingapore/gemma-sea-lion-v4-27b-it"
-        QWEN3_30B = "@cf/qwen/qwen3-30b-a3b-fp8"
-        GEMMA_7B_LORA = "@cf/google/gemma-7b-it-lora"
-        QWEN1_5_1_8B = "@cf/qwen/qwen1.5-1.8b-chat"
-        MISTRAL_SMALL_24B = "@cf/mistralai/mistral-small-3.1-24b-instruct"
-        LLAMA3_2_11B_VISION = "@cf/meta/llama-3.2-11b-vision-instruct"
-        SQLCODER_7B = "@cf/defog/sqlcoder-7b-2"
-        PHI_2 = "@cf/microsoft/phi-2"
-        GPT_OSS_20B = "@cf/openai/gpt-oss-20b"
-        QWEN1_5_14B_AWQ = "@cf/qwen/qwen1.5-14b-chat-awq"
-        OPENCHAT_3_5 = "@cf/openchat/openchat-3.5-0106"
-        LLAMA4_SCOUT_17B = "@cf/meta/llama-4-scout-17b-16e-instruct"
+        DEEPSEEK_R1_32B = "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
+
+        # Google
+        GEMMA_2B_IT_LORA = "@cf/google/gemma-2b-it-lora"
         GEMMA_3_12B = "@cf/google/gemma-3-12b-it"
+        GEMMA_7B_LORA = "@cf/google/gemma-7b-it-lora"
+
+        # Meta
+        LLAMA2_7B_CHAT_FP16 = "@cf/meta/llama-2-7b-chat-fp16"
+        LLAMA2_7B_CHAT_INT8 = "@cf/meta/llama-2-7b-chat-int8"
+
+        LLAMA3_1_8B_INSTRUCT_FP8 = "@cf/meta/llama-3.1-8b-instruct-fp8"
+        LLAMA3_2_1B_INSTRUCT = "@cf/meta/llama-3.2-1b-instruct"
+        LLAMA3_2_3B_INSTRUCT = "@cf/meta/llama-3.2-3b-instruct"
+        LLAMA3_2_11B_VISION_INSTRUCT = "@cf/meta/llama-3.2-11b-vision-instruct"
+        LLAMA3_3_70B_INSTRUCT_FP8_FAST = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+        LLAMA3_8B_INSTRUCT = "@cf/meta/llama-3-8b-instruct"
+
+        LLAMA4_SCOUT_17B_16E_INSTRUCT = "@cf/meta/llama-4-scout-17b-16e-instruct"
+
+        # Mistral
+        MISTRAL_7B_INSTRUCT_V0_1 = "@cf/mistral/mistral-7b-instruct-v0.1"
+        MISTRAL_7B_INSTRUCT_V0_2_LORA = "@cf/mistral/mistral-7b-instruct-v0.2-lora"
+        MISTRAL_SMALL_24B_INSTRUCT = "@cf/mistralai/mistral-small-3.1-24b-instruct"
+
+        # OpenAI
+        GPT_OSS_20B = "@cf/openai/gpt-oss-20b"
+        GPT_OSS_120B = "@cf/openai/gpt-oss-120b"
+
+        # Qwen
+        QWEN1_5_14B_CHAT_AWQ = "@cf/qwen/qwen1.5-14b-chat-awq"
+        QWEN2_5_CODER_32B_INSTRUCT = "@cf/qwen/qwen2.5-coder-32b-instruct"
+        QWEN3_30B_FP8 = "@cf/qwen/qwen3-30b-a3b-fp8"
         QWQ_32B = "@cf/qwen/qwq-32b"
         
     def __init__(self, session: requests.Session):
@@ -106,6 +134,23 @@ class Cloudflare:
         self.ws: requests.WebSocket
 
         self.last_model: str = None
+        self.last_messages: list = None
+        
+        # chat variables
+        self._pk: str = None
+        self._room_id: str = None
+
+        self.base_url: str = None
+        self.room_name: str = None
+        self.ws_url: str = None
+
+        self._emulate_page_load()
+
+    def _emulate_page_load(self):
+        self.session.get("https://playground.ai.cloudflare.com/")
+        self._new_room()
+
+    def _new_room(self):
         # chat variables
         self._pk = self.Random.gR()
         self._room_id = self.Random.Dv()
@@ -114,10 +159,6 @@ class Cloudflare:
         self.room_name = f"Cloudflare-AI-Playground-{self._room_id}"
         self.ws_url = f"wss://{self.base_url}/{self.room_name}?_pk={self._pk}"
 
-        self._emulate_page_load()
-
-    def _emulate_page_load(self):
-        self.session.get("https://playground.ai.cloudflare.com/")
         _temp_headers = {
             "referer": "https://playground.ai.cloudflare.com/",
             "sec-fetch-dest": "empty",
@@ -157,7 +198,6 @@ class Cloudflare:
             length = len(s)
 
             while idx < length:
-                # skip whitespace
                 while idx < length and s[idx].isspace():
                     idx += 1
                 if idx >= length:
@@ -204,16 +244,30 @@ class Cloudflare:
         }
 
     def generate(self, messages: list, model: str, *, system=None):
-        if not self.last_model:
-            self.last_model = model
+        new_chat = False
+
+        if self.last_model != model:
             self._change_model(model, system)
-        else:
-            if not self.last_model == model:
-                self._change_model(model, system)
-                self.last_model = model
+            self.last_model = model
+            new_chat = True
+
+        if not self._Messages._is_continuation(self.last_messages, messages):
+            new_chat = True
+
+        if new_chat:
+            self.ws.close()
+            self._new_room()
+            self._emulate_page_load()
+            self.last_messages = []
+
+
+        self.last_messages = messages.copy()
+
+        print(messages)
 
         _request_id = self.Random.Dv(8)
         _messages = self._Messages._convert_messages(messages)
+        print("_messages=",_messages)
         _base = {
             "id": _request_id,
             "type": "cf_agent_use_chat_request",
