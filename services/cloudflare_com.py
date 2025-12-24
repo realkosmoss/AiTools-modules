@@ -263,11 +263,9 @@ class Cloudflare:
 
         self.last_messages = messages.copy()
 
-        print(messages)
-
         _request_id = self.Random.Dv(8)
         _messages = self._Messages._convert_messages(messages)
-        print("_messages=",_messages)
+        
         _base = {
             "id": _request_id,
             "type": "cf_agent_use_chat_request",
