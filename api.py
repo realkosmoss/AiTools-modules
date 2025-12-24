@@ -6,15 +6,25 @@ from fastapi import Request
 
 # from services.perchance_org import Perchance, PerchanceContext # not adding this, cant be bothered really
 from services.z_ai import Z_AI
+from services.cloudflare_com import Cloudflare
 
 session = ...
 
 # fucking services, 100% not the best way to do it but who the fuck cares
+# hmm, probably mutating the session, both z.ai and cloudflare, fuck
 zai = Z_AI(session)
+cf = Cloudflare(session)
 
 MODEL_MAP = {
-    name: value
-    for name, value in vars(Z_AI.Models).items()
+    name: {
+        "provider": provider,
+        "model": value,
+    }
+    for provider, cls in {
+        "zai": Z_AI.Models,
+        "cloudflare": Cloudflare.Models,
+    }.items()
+    for name, value in vars(cls).items()
     if not name.startswith("_")
 }
 
@@ -117,8 +127,20 @@ async def chat(req: Request):
     model = body.get("model", "unknown")
     messages = body.get("messages", [])
 
-    _model = MODEL_MAP.get(model)
-    response = zai.generate(messages, _model)
+    entry = MODEL_MAP.get(model)
+    if not entry:
+        return "not actual model fuck face", 400
+
+    provider = entry["provider"]
+    _model = entry["model"]
+
+    if provider == "zai":
+        response = zai.generate(messages, _model)
+    elif provider == "cloudflare":
+        response = cf.generate(messages, _model)
+    else:
+        raise RuntimeError(f"Unsupported provider: {provider}")
+
 
     return {
         "model": model,
