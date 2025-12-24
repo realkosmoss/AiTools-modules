@@ -255,7 +255,8 @@ class Cloudflare:
             new_chat = True
 
         if new_chat:
-            self.ws.close()
+            if not self.ws.closed:
+                self.ws.close()
             self._new_room()
             self._emulate_page_load()
             self.last_messages = []
@@ -265,7 +266,7 @@ class Cloudflare:
 
         _request_id = self.Random.Dv(8)
         _messages = self._Messages._convert_messages(messages)
-        
+
         _base = {
             "id": _request_id,
             "type": "cf_agent_use_chat_request",
@@ -283,7 +284,8 @@ class Cloudflare:
                 })
             }
         }
-
+        if self.ws.closed:
+            self._new_room()
         self.ws.send_json(_base)
 
         _out = self._parse_stream()
