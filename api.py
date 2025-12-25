@@ -8,7 +8,9 @@ from fastapi import Request
 from services.z_ai import Z_AI
 from services.cloudflare_com import Cloudflare
 
-session = ...
+from fingerprints import make_galaxy_s23
+
+session = make_galaxy_s23()
 
 # fucking services, 100% not the best way to do it but who the fuck cares
 # hmm, probably mutating the session, both z.ai and cloudflare, fuck
@@ -16,7 +18,7 @@ zai = Z_AI(session)
 cf = Cloudflare(session)
 
 MODEL_MAP = {
-    name: {
+    key: {
         "provider": provider,
         "model": value,
     }
@@ -26,6 +28,9 @@ MODEL_MAP = {
     }.items()
     for name, value in vars(cls).items()
     if not name.startswith("_")
+    for key in (
+        (name, f"{name}_thinking") if provider == "zai" else (name,)
+    )
 }
 
 app = FastAPI(
@@ -135,12 +140,15 @@ async def chat(req: Request):
     _model = entry["model"]
 
     if provider == "zai":
-        response = zai.generate(messages, _model)
+        thinking = False
+        if "_thinking" in _model:
+            _model = _model.replace("_thinking", "")
+            thinking = True
+        response = zai.generate(messages, _model, thinking=thinking)
     elif provider == "cloudflare":
         response = cf.generate(messages, _model)
     else:
         raise RuntimeError(f"Unsupported provider: {provider}")
-
 
     return {
         "model": model,

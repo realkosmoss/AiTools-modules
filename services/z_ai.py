@@ -133,7 +133,9 @@ class _ShittyFuckingContextHandler:
 
 class _ShittyFuckingRequestBuilder:
     @staticmethod
-    def build(model: str, internal_messages: list, message_handler: _ShittyFuckingMessageHandler, context_handler: _ShittyFuckingContextHandler, stream: bool = True):
+    def build(model: str, internal_messages: list,
+              message_handler: _ShittyFuckingMessageHandler, context_handler: _ShittyFuckingContextHandler,
+              *, stream: bool = True, thinking: bool = False, search=False):
         current = next(m for m in reversed(internal_messages) if m["role"] == "user")
         
         return {
@@ -152,10 +154,10 @@ class _ShittyFuckingRequestBuilder:
 
             "features": {
                 "image_generation": False,
-                "auto_web_search": False,
+                "auto_web_search": search,
                 "preview_mode": True,
                 "flags": [],
-                "enable_thinking": False,
+                "enable_thinking": thinking,
                 "web_search": False,
             },
 
@@ -338,7 +340,7 @@ class Z_AI:
         self.chat_id = chat_id
         self.session.get(f"https://chat.z.ai/c/{self.chat_id}")
 
-    def generate(self, _messages, model: str):
+    def generate(self, _messages, model: str, *, thinking: bool = False, search: bool = False):
         if not self.token:
             self._emulate_page_load()
         if not self.chat_id:
@@ -346,7 +348,7 @@ class Z_AI:
             self.MessageHandler = _ShittyFuckingMessageHandler(self.chat_id)
 
         _internal_messages = self.MessageHandler.build(_messages)
-        _payload = _ShittyFuckingRequestBuilder.build(model, _internal_messages, self.MessageHandler, self.ContextManager)
+        _payload = _ShittyFuckingRequestBuilder.build(model, _internal_messages, self.MessageHandler, self.ContextManager, thinking=thinking, search=search)
         _query   = _ShittyFuckingQueryBuilder(
             self.id,
             self.token,
