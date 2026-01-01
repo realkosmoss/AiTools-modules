@@ -95,7 +95,7 @@ def show(body: dict):
             "general.quantization_version": 2,
             f"{_model_name}.context_length": 32768
         },
-        "capabilities": ["completion"],
+        "capabilities": ["completion", "tools", "thinking"],
         "modified_at": "2025-12-22T20:27:58.3889148+01:00"
     }
     return _base
@@ -175,5 +175,111 @@ async def me():
         "firstname": "Jane",
         "lastname": "Doe",
         "plan": "free"
-
     }
+
+# OpenAI Compatible shit because sillytavern IS F___ING AUTISTIC
+@app.api_route("/v1/models", methods=["GET", "HEAD"])
+def ls():
+    base_format = {
+        "object": "list",
+        "data": []
+    }
+    for _model_name in MODEL_MAP:
+        _model = {
+            "id": _model_name,
+            "object": "model",
+            "created": 0,
+            "owned_by": "example"
+        }
+        base_format["data"].append(_model)
+    return base_format
+
+from fastapi.responses import StreamingResponse
+import json
+import time
+
+@app.post("/v1/chat/completions")
+async def chat(req: Request):
+    body = await req.json()
+
+    model = body.get("model", "unknown")
+    messages = body.get("messages", [])
+
+    entry = MODEL_MAP.get(model)
+    if not entry:
+        return "not actual model fuck face", 400
+
+    provider = entry["provider"]
+    _model = entry["model"]
+
+    if provider == "zai":
+        thinking = False
+        if "_thinking" in _model:
+            _model = _model.replace("_thinking", "")
+            thinking = True
+        response = zai.generate(messages, _model, thinking=thinking)
+    elif provider == "cloudflare":
+        response = cf.generate(messages, _model)
+    else:
+        raise RuntimeError(f"Unsupported provider: {provider}")
+
+    if body.get("stream") is not True:
+        return {
+            "id": "chatcmpl-000",
+            "object": "chat.completion",
+            "created": 0,
+            "model": model,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": response
+                    },
+                    "finish_reason": "stop"
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0
+            }
+        }
+
+    def event_stream():
+        for chunk in response.split(" "):
+            payload = {
+                "id": "chatcmpl-000",
+                "object": "chat.completion.chunk",
+                "created": 0,
+                "model": model,
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"content": chunk + " "},
+                        "finish_reason": None
+                    }
+                ]
+            }
+            yield f"data: {json.dumps(payload)}\n\n"
+
+        payload = {
+            "id": "chatcmpl-000",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": model,
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {},
+                    "finish_reason": "stop"
+                }
+            ]
+        }
+        yield f"data: {json.dumps(payload)}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream"
+    )
