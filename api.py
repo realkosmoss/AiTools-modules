@@ -1,8 +1,10 @@
 # pip install fastapi uvicorn
 # uvicorn api:app --host 127.0.0.1 --port 11434
 from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 from fastapi.concurrency import run_in_threadpool
 from datetime import datetime, timezone
+import json
 
 # from services.perchance_org import Perchance, PerchanceContext # not adding this, cant be bothered really
 from services.z_ai import Z_AI
@@ -203,10 +205,6 @@ def ls():
         base_format["data"].append(_model)
     return base_format
 
-from fastapi.responses import StreamingResponse
-import json
-import time
-
 @app.post("/v1/chat/completions")
 async def chat(req: Request):
     body = await req.json()
@@ -301,4 +299,3 @@ async def chat(req: Request):
         event_stream(),
         media_type="text/event-stream"
     )
-
