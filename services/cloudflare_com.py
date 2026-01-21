@@ -168,12 +168,15 @@ class Cloudflare:
         _temp_headers = {**self.session.headers, **_temp_headers}
         self.session.get(f"https://{self.base_url}/{self.room_name}/get-messages", headers=_temp_headers)
 
+        print(self.ws_url)
+
         self.ws = self.session.ws_connect(
             self.ws_url,
             headers={
                 "Origin": "https://playground.ai.cloudflare.com",
                 "User-Agent": self.session.headers.get("user-agent"),
                 "Sec-GPC": "1",
+                "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
                 "Pragma": "no-cache",
             }
         )
